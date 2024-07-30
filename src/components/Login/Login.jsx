@@ -29,7 +29,8 @@ const LoginPage = () => {
         await dispatch(loginUser({ email, password })).unwrap();
         navigate('/');
       } catch (error) {
-        console.error('Login failed:', error);
+        console.error('Login failed:', error.message);
+        alert('Login failed. Please check your credentials and try again.');
       }
     },
   });
@@ -48,6 +49,9 @@ const LoginPage = () => {
               className={styles.formInput}
             />
           </label>
+          {formik.touched.email && formik.errors.email ? (
+            <p className={styles.error}>{formik.errors.email}</p>
+          ) : null}
         </div>
 
         <div className={styles.formGroup}>
@@ -61,6 +65,9 @@ const LoginPage = () => {
               className={styles.formInput}
             />
           </label>
+          {formik.touched.password && formik.errors.password ? (
+            <p className={styles.error}>{formik.errors.password}</p>
+          ) : null}
         </div>
 
         <div className={styles.formGroup}>

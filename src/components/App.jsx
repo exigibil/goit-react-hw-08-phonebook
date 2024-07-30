@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import Phonebook from './Phonebook/Phonebook';
 import LoginPage from './Login/Login';
 import RegisterPage from './Register/Register';
 import styles from './Login/Login.module.css';
+import Navbar from './Navbar/Navbar';
+
 
 
 export const App = () => {
@@ -26,6 +28,13 @@ export const App = () => {
         }}
       >
         <header>
+          {isLoggedIn? (
+            <Navbar />
+          ) : (
+            <div className={styles.navLink} > 
+              Wellcome
+            </div>
+          )}
           <h1>AEM Contact Agenda</h1>
         </header>
         <main>

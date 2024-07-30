@@ -116,3 +116,13 @@
 .formInput:focus {
   border-bottom: 1px solid rgba(255, 255, 255, 0.8);
 }
+
+.navLink{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #021c53;
+  height: 40px;
+  font-size: 1.5rem;
+  color: #ffffff;
+}

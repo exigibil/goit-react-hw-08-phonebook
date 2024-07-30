@@ -29,7 +29,9 @@ const Register = () => {
       email: Yup.string()
         .email('Invalid email address')
         .required('Email is required'),
-      password: Yup.string().required('Password is required'),
+      password: Yup.string()
+        .min(8, 'Password must be at least 8 characters')
+        .required('Password is required'),
       repeatPassword: Yup.string()
         .oneOf([Yup.ref('password'), null], 'Passwords must match')
         .required('Repeat Password is required'),
@@ -37,24 +39,20 @@ const Register = () => {
     onSubmit: async values => {
       const { username, email, password } = values;
       try {
-        await dispatch(registerUser({ username, email, password })).unwrap();
+        await dispatch(registerUser({ email, ownerUuid: username, password, rol: 1 })).unwrap();
         navigate('/login');
       } catch (error) {
-        console.error('Registration failed:', error);
+        console.error('Registration failed:', error.message);
+        alert('Registration failed: ' + error.message);
       }
     },
   });
 
   const getPasswordStrength = password => {
-    if (password.length < 6) {
-      return 1;
-    } else if (password.length < 8) {
-      return 2;
-    } else if (password.length < 10) {
-      return 3;
-    } else {
-      return 4;
-    }
+    if (password.length < 6) return 1;
+    if (password.length < 8) return 2;
+    if (password.length < 10) return 3;
+    return 4;
   };
 
   const handlePasswordChange = e => {
@@ -72,10 +70,10 @@ const Register = () => {
     for (let i = 1; i <= 4; i++) {
       let className = styles.strengthSegment;
       if (i <= passwordStrength) {
-        if (i === 1) className += ` ${styles.veryWeak}`;
-        else if (i === 2) className += ` ${styles.weak}`;
-        else if (i === 3) className += ` ${styles.medium}`;
-        else if (i === 4) className += ` ${styles.strong}`;
+        className += i === 1 ? ` ${styles.veryWeak}` : 
+                      i === 2 ? ` ${styles.weak}` :
+                      i === 3 ? ` ${styles.medium}` : 
+                                ` ${styles.strong}`;
       }
       segments.push(<div key={i} className={className}></div>);
     }
