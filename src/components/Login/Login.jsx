@@ -27,7 +27,7 @@ const LoginPage = () => {
       const { email, password } = values;
       try {
         await dispatch(loginUser({ email, password })).unwrap();
-        navigate('/');
+        navigate('/goit-react-hw-07-phonebook');  // Redirect to the Phonebook page upon successful login.
       } catch (error) {
         console.error('Login failed:', error.message);
         alert('Login failed. Please check your credentials and try again.');
@@ -47,6 +47,7 @@ const LoginPage = () => {
               placeholder="Email"
               {...formik.getFieldProps('email')}
               className={styles.formInput}
+              autoComplete="email"
             />
           </label>
           {formik.touched.email && formik.errors.email ? (
@@ -63,6 +64,7 @@ const LoginPage = () => {
               placeholder="Password"
               {...formik.getFieldProps('password')}
               className={styles.formInput}
+              autoComplete="current-password"
             />
           </label>
           {formik.touched.password && formik.errors.password ? (

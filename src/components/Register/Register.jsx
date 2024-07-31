@@ -26,27 +26,21 @@ const Register = () => {
     },
     validationSchema: Yup.object({
       username: Yup.string().required('Username is required'),
-      email: Yup.string()
-        .email('Invalid email address')
-        .required('Email is required'),
-      password: Yup.string()
-        .min(8, 'Password must be at least 8 characters')
-        .required('Password is required'),
-      repeatPassword: Yup.string()
-        .oneOf([Yup.ref('password'), null], 'Passwords must match')
-        .required('Repeat Password is required'),
+      email: Yup.string().email('Invalid email address').required('Email is required'),
+      password: Yup.string().min(8, 'Password must be at least 8 characters').required('Password is required'),
+      repeatPassword: Yup.string().oneOf([Yup.ref('password'), null], 'Passwords must match').required('Repeat Password is required'),
     }),
     onSubmit: async values => {
       const { username, email, password } = values;
       try {
-        await dispatch(registerUser({ email, ownerUuid: username, password, rol: 1 })).unwrap();
+        await dispatch(registerUser({ name: username, email, password })).unwrap();
         navigate('/login');
       } catch (error) {
-        console.error('Registration failed:', error.message);
-        alert('Registration failed: ' + error.message);
+        handleError(error);
       }
     },
   });
+
 
   const getPasswordStrength = password => {
     if (password.length < 6) return 1;
@@ -79,6 +73,17 @@ const Register = () => {
     }
     return <div className={styles.strengthBar}>{segments}</div>;
   };
+
+  const handleError = (error) => {
+    if (error.response && error.response.data) {
+      const errorMessage = error.response.data.message || 'An error occurred';
+      alert(errorMessage);
+    } else {
+      alert('An unknown error occurred. Please try again.');
+    }
+  };
+
+
 
   return (
     <div className={styles.boxForm}>

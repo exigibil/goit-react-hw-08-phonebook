@@ -1,109 +1,90 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
+const client = axios.create({
+  baseURL: "https://connections-api.goit.global"
+});
 
-const API_KEY = process.env.REACT_APP_RAPIDAPIKEY;
-const API_HOST = 'auth100.p.rapidapi.com';
-const API_BASE_URL = 'https://auth100.p.rapidapi.com/cerve/api/v1.0';
+client.interceptors.request.use(config => {
+  config.headers['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
+  return config;
+});
 
 
+// User registration
 export const registerUser = createAsyncThunk(
-  'auth/registerUser',
-  async ({ email, ownerUuid, password, rol }, thunkAPI) => {
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/users`,
-        { email, ownerUuid, password, rol },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-rapidapi-key': API_KEY,
-            'x-rapidapi-host': API_HOST,
-            'country-code': 'AR',
-          },
-        }
-      );
-      return response.data;
-    } catch (error) {
-      console.error('User registration failed:', error.message);
-      return thunkAPI.rejectWithValue(error.response ? error.response.data : error.message);
+    'user/register',
+    async ({ name, email, password }, thunkAPI) => {
+      try {
+        const response = await client.post('/users/signup', {
+          name,
+          email,
+          password,
+        });
+        const { token, user } = response.data;
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user)); // Store user data
+        return { token, user };
+      } catch (error) {
+        const errorMessage = error.response && error.response.data
+          ? error.response.data.message
+          : error.message;
+        console.error('Registration failed:', errorMessage);
+        return thunkAPI.rejectWithValue(errorMessage);
+      }
     }
-  }
-);
-
+  );
+  
+  
+// User login
 export const loginUser = createAsyncThunk(
-  'auth/loginUser',
-  async ({ email, password, ownerUuid }, thunkAPI) => {
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/login`,
-        { email, password, ownerUuid },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-rapidapi-key': API_KEY,
-            'x-rapidapi-host': API_HOST,
-            'country-code': 'AR',
-          },
-        }
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Login failed:', error.message);
-      return thunkAPI.rejectWithValue(error.response ? error.response.data : error.message);
+    'user/login',
+    async ({ email, password }, thunkAPI) => {
+      try {
+        const response = await client.post('/users/login', { email, password });
+        const { token, user } = response.data;
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user)); // Store user data in local storage
+        return { token, user };
+      } catch (error) {
+        console.error('Login failed:', error.message);
+        return thunkAPI.rejectWithValue(error.message);
+      }
     }
-  }
-);
-
-
+  );
+// User logout
 export const logoutUser = createAsyncThunk(
-  'auth/logoutUser',
+  'user/logout',
   async (_, thunkAPI) => {
     try {
-
-      const response = await axios.post(
-        `${API_BASE_URL}/logout`,
-        {},
-        {
-          headers: {
-            'x-rapidapi-key': API_KEY,
-            'x-rapidapi-host': API_HOST,
-            'country-code': 'AR',
-          },
-        }
-      );
-      return response.data;
+      await client.post('/users/logout');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user'); // Remove user data from local storage
     } catch (error) {
       console.error('Logout failed:', error.message);
-      return thunkAPI.rejectWithValue(error.response ? error.response.data : error.message);
+      return thunkAPI.rejectWithValue(error.message);
     }
   }
 );
+  
 
-
-export const getUser = createAsyncThunk(
-  'auth/getUser',
-  async ({ ownerUuid }, thunkAPI) => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/users`,
-        {
-          headers: {
-            'x-rapidapi-key': API_KEY,
-            'x-rapidapi-host': API_HOST,
-            'country-code': 'AR',
-          },
-          params: { owner: ownerUuid },
+  export const refreshUser = createAsyncThunk(
+    'user/refresh',
+    async (_, thunkAPI) => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await client.get('/users/current');
+          return response.data;
+        } catch (error) {
+          console.error('User refresh failed:', error.message);
+          return thunkAPI.rejectWithValue(error.message);
         }
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Get user failed:', error.message);
-      return thunkAPI.rejectWithValue(error.response ? error.response.data : error.message);
+      } else {
+        return thunkAPI.rejectWithValue('No token found');
+      }
     }
-  }
-);
-
+  );
 
 const initialState = {
   user: null,
@@ -112,71 +93,70 @@ const initialState = {
   error: null,
 };
 
-
 const authSlice = createSlice({
-  name: 'auth',
-  initialState,
-  reducers: {
-    logout(state) {
-      state.user = null;
-      state.isLoggedIn = false;
-    },
-  },
-  extraReducers: builder => {
-    builder
-      .addCase(registerUser.pending, state => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(registerUser.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = action.payload;
-        state.isLoggedIn = true;
-      })
-      .addCase(registerUser.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
-      .addCase(loginUser.pending, state => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(loginUser.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = action.payload;
-        state.isLoggedIn = true;
-      })
-      .addCase(loginUser.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
-      .addCase(logoutUser.pending, state => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(logoutUser.fulfilled, (state, action) => {
-        state.isLoading = false;
+    name: 'auth',
+    initialState,
+    reducers: {
+      logout(state) {
         state.user = null;
         state.isLoggedIn = false;
-      })
-      .addCase(logoutUser.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
-      .addCase(getUser.pending, state => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(getUser.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = action.payload;
-      })
-      .addCase(getUser.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      });
-  },
-});
-
-export const { logout } = authSlice.actions;
-export const authReducer = authSlice.reducer;
+      },
+    },
+    extraReducers: builder => {
+      builder
+        .addCase(registerUser.pending, state => {
+          state.isLoading = true;
+          state.error = null;
+        })
+        .addCase(registerUser.fulfilled, (state, action) => {
+          state.isLoading = false;
+          state.user = action.payload.user;
+          state.isLoggedIn = true;
+        })
+        .addCase(registerUser.rejected, (state, action) => {
+          state.isLoading = false;
+          state.error = action.payload;
+        })
+        .addCase(loginUser.pending, state => {
+          state.isLoading = true;
+          state.error = null;
+        })
+        .addCase(loginUser.fulfilled, (state, action) => {
+          state.isLoading = false;
+          state.user = action.payload.user;
+          state.isLoggedIn = true;
+        })
+        .addCase(loginUser.rejected, (state, action) => {
+          state.isLoading = false;
+          state.error = action.payload;
+        })
+        .addCase(logoutUser.pending, state => {
+          state.isLoading = true;
+          state.error = null;
+        })
+        .addCase(logoutUser.fulfilled, (state, action) => {
+          state.isLoading = false;
+          state.user = null;
+          state.isLoggedIn = false;
+        })
+        .addCase(logoutUser.rejected, (state, action) => {
+          state.isLoading = false;
+          state.error = action.payload;
+        })
+        .addCase(refreshUser.pending, state => {
+          state.isLoading = true;
+          state.error = null;
+        })
+        .addCase(refreshUser.fulfilled, (state, action) => {
+          state.isLoading = false;
+          state.user = action.payload;
+        })
+        .addCase(refreshUser.rejected, (state, action) => {
+          state.isLoading = false;
+          state.error = action.payload;
+        });
+    },
+  });
+  
+  export const { logout } = authSlice.actions;
+  export const authReducer = authSlice.reducer;
