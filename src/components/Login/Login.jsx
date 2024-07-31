@@ -27,7 +27,7 @@ const LoginPage = () => {
       const { email, password } = values;
       try {
         await dispatch(loginUser({ email, password })).unwrap();
-        navigate('/goit-react-hw-07-phonebook');  // Redirect to the Phonebook page upon successful login.
+        navigate('/goit-react-hw-08-phonebook');  
       } catch (error) {
         console.error('Login failed:', error.message);
         alert('Login failed. Please check your credentials and try again.');
